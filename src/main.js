@@ -3,36 +3,61 @@
 /* eslint-disable no-console */
 
 const express = require('express')
-const fs = require('fs')
+const bodyParser = require('body-parser')
+
+const userRouter = express.Router()
 
 const app = express()
+app.use(bodyParser.json())
 
 const PORT = 5000
 
-app.use('/', async (req, res, next) => {
-  console.log('Middleware 1')
+const USERS = {
+  15: {
+    nickname: 'foo',
+  },
+}
 
-  const fileContent = await fs.promises.readFile('.gitignore')
+userRouter.get('/', (req, res) => {
+  console.log(1)
+  res.send('User list')
+})
 
-  const requestedAt = new Date()
+userRouter.param('id', (req, res, next, value) => {
+  console.log(2)
+  console.log(value)
 
   // @ts-ignore
-  req.requestedAt = requestedAt
-  // @ts-ignore
-  req.fileContent = fileContent
+  req.user = USERS[value]
   next()
 })
 
-/* 수 많은 middleware 들... */
+userRouter.get('/:id', (req, res) => {
+  console.log(3)
+  console.log('User info with ID')
 
-app.use((req, res) => {
-  console.log('Middleware 2')
-
-  res.send(
-    // @ts-ignore
-    `Hello, express!: Requested at ${req.requestedAt}, ${req.fileContent}`
-  )
+  // @ts-ignore
+  res.send(req.user)
 })
+
+userRouter.post('/', (req, res) => {
+  console.log(4)
+  // Register user
+  res.send('User registered')
+})
+
+userRouter.post('/:id/nickname', (req, res) => {
+  console.log(5)
+  // @ts-ignore
+  const { user } = req
+  const { nickname } = req.body
+
+  user.nickname = nickname
+
+  res.send(`User nickname updated: ${nickname}`)
+})
+
+app.use('/users', userRouter)
 
 app.listen(PORT, () => {
   console.log(`The Express server is listening at port: ${PORT}`)
